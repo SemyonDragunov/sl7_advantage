@@ -1,0 +1,114 @@
+// SL7 Advantage.
+//===============
+
+@import "../bower_components/susy/sass/susy";
+
+// Variables.
+
+$susy: (
+        gutters: 1/10,
+        global-box-sizing: border-box,
+        use-custom: (
+                rem: true
+        )
+);
+
+$phone-only-breakpoint: (
+        max-width: 767px,
+);
+
+$tablet-only-breakpoint: (
+        min-width: 768px,
+        max-width: 1119px,
+);
+
+[id*=block-sl7-advantage] {
+  .content-wrapper {
+    @include susy-clearfix;
+  }
+}
+
+.sl7-advantage-service-section {
+  @include span(full);
+  @include susy-clearfix;
+
+  .item {
+    text-align: center;
+
+    img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .field {
+      margin-bottom: 15px;
+
+      &[class*=title] {
+        font-size: 150%;
+      }
+
+      &[class*=body] { text-align: left !important; }
+    }
+  }
+
+  // 1 column.
+  &.col-1 {
+    .item {
+      @include span(full);
+    }
+  }
+
+  // 2 column.
+  &.col-2 {
+    .item {
+      @include span(1 of 2);
+
+      &:nth-child(2n) {
+        @include span(last);
+      }
+
+      @include susy-breakpoint($phone-only-breakpoint) {
+        @include span(full);
+      }
+    }
+  }
+
+  // 3 column.
+  &.col-3 {
+    .item {
+      @include span(1 of 3);
+
+      &:nth-child(3n) {
+        @include span(last);
+      }
+
+      @include susy-breakpoint($phone-only-breakpoint) {
+        @include span(full);
+      }
+    }
+  }
+
+  // 4 column.
+  &.col-4 {
+    .item {
+      @include span(1 of 4);
+
+      &:nth-child(4n) {
+        @include span(last);
+      }
+
+      @include susy-breakpoint($tablet-only-breakpoint) {
+        @include span(1 of 3);
+
+        &:nth-child(3n) {
+          @include span(last);
+        }
+      }
+
+      @include susy-breakpoint($phone-only-breakpoint) {
+        @include span(full);
+      }
+    }
+  }
+}

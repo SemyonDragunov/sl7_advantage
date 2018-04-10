@@ -1,0 +1,325 @@
+<?php
+
+/**
+ * @author Semyon Dragunov <sam.dragunov@gmail.com>
+ * https://github.com/SemyonDragunov
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function sl7_advantage_schema() {
+
+  $schema['sl7_advantage_block'] = array(
+    'description'  => 'The base table for sl7_advantage_block entities.',
+    'fields'       => array(
+      'bid'     => array(
+        'description' => 'Primary Key: Image ID.',
+        'type'        => 'serial',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'sid' => array(
+        'description' => 'The {sl7_advantage_service}.sid reference.',
+        'type'        => 'int',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'uid'     => array(
+        'type'        => 'int',
+        'not null'    => TRUE,
+        'unsigned'    => TRUE,
+        'default'     => 0,
+        'description' => 'The {users}.uid that create this image; initially, this is the user that created it.',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the order was created.',
+        'type'        => 'int',
+        'not null'    => TRUE,
+        'default'     => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the order was most recently saved.',
+        'type'        => 'int',
+        'not null'    => TRUE,
+        'default'     => 0,
+      ),
+    ),
+    'indexes'      => array(
+      'bid' => array('bid'),
+    ),
+    'foreign keys' => array(
+      'users' => array(
+        'table'   => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+      'sl7_gallery_album' => array(
+        'table' => 'sl7_advantage_service',
+        'columns' => array('sid' => 'sid'),
+      ),
+    ),
+    'primary key'  => array('bid'),
+  );
+
+  $schema['sl7_advantage_service'] = array(
+    'description' => 'The base table for sl7_advantage_service entities.',
+    'fields' => array(
+      'sid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'description' => 'Primary Key: Album ID.',
+      ),
+      'label' => array(
+        'type' => 'varchar',
+        'not null' => TRUE,
+        'length' => 255,
+        'description' => 'Title of item.',
+      ),
+      'grid'  => array(
+        'type'        => 'int',
+        'not null'    => TRUE,
+        'unsigned'    => TRUE,
+        'default'     => 0,
+        'description' => 'Count grid to row.',
+      ),
+      'uid'     => array(
+        'type'        => 'int',
+        'not null'    => TRUE,
+        'unsigned'    => TRUE,
+        'default'     => 0,
+        'description' => 'The {users}.uid that create this album; initially, this is the user that created it.',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the order was created.',
+        'type'        => 'int',
+        'not null'    => TRUE,
+        'default'     => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the order was most recently saved.',
+        'type'        => 'int',
+        'not null'    => TRUE,
+        'default'     => 0,
+      ),
+    ),
+    'indexes' => array(
+      'sid' => array('sid'),
+    ),
+    'foreign keys' => array(
+      'users' => array(
+        'table'   => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+    'primary key' => array('sid'),
+  );
+
+  // Optional cache table for entitycache support.
+  $schema['cache_entity_sl7_advantage_block'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_entity_sl7_advantage_block']['description'] = 'Cache table used to sl7_advantage_block entity records.';
+  $schema['cache_entity_sl7_advantage_service'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_entity_sl7_advantage_service']['description'] = 'Cache table used to sl7_advantage_service entity records.';
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function sl7_advantage_install() {
+
+  // Add foreign key BD level.
+  db_query('
+    ALTER TABLE {sl7_advantage_block}
+    ADD CONSTRAINT {sl7_advantage_service}
+    FOREIGN KEY (sid) REFERENCES {sl7_advantage_service} (sid)
+    ON DELETE CASCADE
+  ');
+
+  // Create fields.
+  _sl7_advantage_install_field();
+  _sl7_advantage_install_instances();
+}
+
+function _sl7_advantage_install_field() {
+  $fields = array(
+    array(
+      'field_name' => 'sl7_advantage_title',
+      'type' => 'text',
+      'cardinality' => 1,
+      'module' => 'text',
+    ),
+    array(
+      'field_name' => 'sl7_advantage_image',
+      'type' => 'image',
+      'cardinality' => 1,
+      'module' => 'image',
+      'settings' => array(
+        'uri_scheme' => 'public',
+        'default_image' => 0,
+      ),
+      'foreign keys' => array(
+        'fid' => array(
+          'columns' => array(
+            'fid' => 'fid',
+          ),
+          'table' => 'file_managed',
+        ),
+      ),
+      'indexes' => array(
+        'fid' => array(
+          0 => 'fid',
+        ),
+      ),
+    ),
+    array(
+      'field_name' => 'sl7_advantage_body',
+      'type' => 'text_long',
+      'cardinality' => 1,
+      'translatable' => '1',
+      'module' => 'text',
+      'foreign keys' => array(
+        'format' => array(
+          'columns' => array(
+            'format' => 'format',
+          ),
+          'table' => 'filter_format',
+        ),
+      ),
+      'indexes' => array(
+        'format' => array(
+          0 => 'format',
+        ),
+      ),
+    ),
+  );
+  foreach ($fields as $field) {
+    $exists = db_query("SELECT id FROM {field_config} WHERE field_name=:field_name", array(':field_name' => $field['field_name']))->fetchField();
+    if (!$exists) {
+      field_create_field($field);
+    }
+  }
+}
+
+function _sl7_advantage_install_instances() {
+  $instances = array(
+    array(
+      'field_name' => 'sl7_advantage_title',
+      'entity_type' => 'sl7_advantage_block',
+      'bundle' => 'sl7_advantage_block',
+      'label' => 'Заголовок',
+      'widget' => array(
+        'type' => 'text_textfield',
+        'module' => 'text',
+        'weight' => 1,
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'text_plain',
+          'module' => 'text',
+          'weight' => 1,
+        ),
+      ),
+    ),
+    array(
+      'field_name' => 'sl7_advantage_image',
+      'entity_type' => 'sl7_advantage_block',
+      'bundle' => 'sl7_advantage_block',
+      'label' => 'Изображение',
+      'settings' => array(
+        'max_filesize' => 1024*1024*5,
+        'file_extensions' => 'png gif jpg jpeg',
+        'file_directory' => 'sl7_advantage',
+      ),
+      'widget' => array(
+        'type' => 'image_image',
+        'module' => 'image',
+        'weight' => 2,
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'image',
+          'settings' => array(
+            'image_style' => 'sl7_advantage_block'
+          ),
+          'weight' => 2,
+        ),
+      ),
+    ),
+    array(
+      'field_name' => 'sl7_advantage_body',
+      'entity_type' => 'sl7_advantage_block',
+      'bundle' => 'sl7_advantage_block',
+      'label' => 'Описание',
+      'format' => 'plain_text',
+      'widget' => array(
+        'settings' => array(
+          'rows' => '5',
+        ),
+        'type' => 'text_textarea',
+        'weight' => 3,
+      ),
+      'type' => 'text_long',
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'settings' => array(),
+          'type' => 'text_default',
+          'weight' => 3,
+        ),
+      ),
+      'settings' => array(
+        'text_processing' => 0,
+        'user_register_form' => FALSE,
+      ),
+    ),
+  );
+  foreach ($instances as $instance) {
+    $exists = db_query("SELECT id FROM {field_config_instance} WHERE field_name=:field_name AND entity_type=:entity_type AND bundle=:bundle", array(':field_name' => $instance['field_name'], ':entity_type' => $instance['entity_type'], ':bundle' => $instance['bundle']))->fetchField();
+    if (!$exists) {
+      field_create_instance($instance);
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function sl7_advantage_uninstall() {
+
+  db_query('
+    ALTER TABLE {sl7_advantage_block}
+    DROP FOREIGN KEY {sl7_advantage_service}
+  ');
+
+  // Delete fields.
+  field_attach_delete_bundle('sl7_advantage_block', 'sl7_advantage_block');
+  field_attach_delete_bundle('sl7_advantage_service', 'sl7_advantage_service');
+  db_delete('field_config_instance')->condition('entity_type', 'sl7_advantage_block')->execute();
+  db_delete('field_config_instance')->condition('entity_type', 'sl7_advantage_service')->execute();
+  db_delete('field_config')->condition('field_name', 'sl7_advantage_%', 'LIKE')->execute();
+
+  // Delete views.
+  $views = array(
+    'sl7_advantage_service',
+    'sl7_advantage_block',
+  );
+  foreach ($views as $name) {
+    if ($view = views_get_view($name)) {
+      $view->delete();
+    }
+  }
+
+  $result = db_select('variable', 'v')
+    ->fields('v', array('name'))
+    ->condition('name', 'sl7_advantage_%', 'LIKE')
+    ->execute();
+  foreach ($result as $row) {
+    variable_del($row->name);
+  }
+
+  field_purge_batch(1000);
+}

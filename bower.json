@@ -1,0 +1,20 @@
+{
+  "name": "sl7_advantage",
+  "authors": [
+    "Semyon Dragunov <sam.dragunov@gmail.com>"
+  ],
+  "description": "",
+  "main": "",
+  "license": "Apache License 2.0",
+  "homepage": "https://github.com/SemyonDragunov/sl7_advantage",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "susy": "^2.2.12"
+  }
+}

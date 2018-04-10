@@ -1,0 +1,240 @@
+<?php
+
+/**
+ * @file
+ * SL7 Advantage module.
+ * 
+ * @author Semyon Dragunov <sam.dragunov@gmail.com>
+ * https://github.com/SemyonDragunov
+ */
+
+define('SL7_ADVANTAGE_ADMIN_PATH', SL7_CONTROL_PANEL_ADMIN_PATH . '/apps/advantage');
+
+require_once(__DIR__ . '/includes/sl7_advantage_block.api.inc');
+require_once(__DIR__ . '/includes/sl7_advantage_service.api.inc');
+
+/**
+ * Implements hook_entity_info().
+ */
+function sl7_advantage_entity_info() {
+
+  $return['sl7_advantage_block'] = array(
+    'label' => t('Advantage - block'),
+    'entity class' => 'SL7AdvantageBlock',
+    'controller class' => 'SL7AdvantageBlockController',
+    'metadata controller class' => 'SL7AdvantageBlockMetadataController',
+    'views controller class' => 'SL7AdvantageBlockViewsController',
+    'base table' => 'sl7_advantage_block',
+    'fieldable' => TRUE,
+    'static cache' => TRUE,
+    'label callback' => 'entity_class_label',
+    'uri callback' => 'entity_class_uri',
+    'creation callback' => 'sl7_advantage_block_create',
+    'access callback' => 'sl7_advantage_block_access',
+    'load hook' => 'sl7_advantage_block_load',
+    'module' => 'sl7_advantage',
+    'entity keys' => array(
+      'id' => 'bid',
+    ),
+    'admin ui' => array(
+      'path' => SL7_ADVANTAGE_ADMIN_PATH . '/%',
+      'file' => 'includes/sl7_advantage_block.ui.inc',
+      'controller class' => 'SL7AdvantageBlockUIController',
+      'menu wildcard' => '%sl7_advantage_block',
+    ),
+    'bundles' => array(
+      'sl7_advantage_block' => array(
+      	'label' => t('Advantage - block'),
+        'admin' => array(
+          'path' => SL7_ADVANTAGE_ADMIN_PATH . '/%',
+          'access callback' => 'user_access',
+          'access arguments' => array('sl7_advantage administer'),
+        ),
+      ),
+    ),
+  );
+
+  $return['sl7_advantage_service'] = array(
+    'label' => t('Advantage - service'),
+    'entity class' => 'SL7AdvantageService',
+    'controller class' => 'SL7AdvantageServiceController',
+    'metadata controller class' => 'SL7AdvantageServiceMetadataController',
+    'views controller class' => 'SL7AdvantageServiceViewsController',
+    'base table' => 'sl7_advantage_service',
+    'fieldable' => TRUE,
+    'static cache' => TRUE,
+    'label callback' => 'entity_class_label',
+    'uri callback' => 'entity_class_uri',
+    'creation callback' => 'sl7_advantage_service_create',
+    'access callback' => 'sl7_advantage_service_access',
+    'load hook' => 'sl7_advantage_service_load',
+    'module' => 'sl7_advantage',
+    'entity keys' => array(
+      'id' => 'sid',
+      'label' => 'label',
+    ),
+    'admin ui' => array(
+      'path' => SL7_ADVANTAGE_ADMIN_PATH,
+      'file' => 'includes/sl7_advantage_service.ui.inc',
+      'controller class' => 'SL7AdvantageServiceUIController',
+      'menu wildcard' => '%sl7_advantage_service',
+    ),
+    'bundles' => array(
+      'sl7_advantage_service' => array(
+      	'label' => t('Advantage - service'),
+        'admin' => array(
+          'path' => SL7_ADVANTAGE_ADMIN_PATH,
+          'access callback' => 'user_access',
+          'access arguments' => array('sl7_advantage administer'),
+        ),
+      ),
+    ),
+  );
+
+  if (module_exists('entitycache')) {
+    $return['sl7_advantage_block']['field cache'] = FALSE;
+    $return['sl7_advantage_block']['entity cache'] = TRUE;
+    $return['sl7_advantage_service']['field cache'] = FALSE;
+    $return['sl7_advantage_service']['entity cache'] = TRUE;
+  }
+
+  return $return;
+}
+
+/**
+ * Implement hook_permission().
+ */
+function sl7_advantage_permission() {
+  return array(
+    'sl7_advantage administer' => array('title' => t('Administering Advantage')),
+  );
+}
+
+/**
+ * Implement hook_theme().
+ */
+function sl7_advantage_theme() {
+  $items = array(
+    'sl7_advantage_service' => array(
+      'variables' => array('element' => null),
+      'template' => 'templates/sl7-advantage-service'
+    ),
+  );
+
+  foreach ($items as &$item) {
+    if (!isset($item['file'])) {
+      $item['file'] = 'templates/theme.inc';
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function sl7_advantage_flush_caches() {
+  return array(
+    'cache_entity_sl7_advantage_block',
+    'cache_entity_sl7_advantage_service',
+  );
+}
+
+function sl7_advantage_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'sl7_advantage') . '/views',
+  );
+}
+
+/**
+ * Implements hook_views_default_views().
+ **/
+function sl7_advantage_views_default_views() {
+  $files = file_scan_directory(drupal_get_path('module', 'sl7_advantage'). '/views', '/.view.inc/');
+  foreach ($files as $filepath => $file) {
+    require $filepath;
+    if (isset($view)) {
+      $views[$view->name] = $view;
+    }
+  }
+
+  if ($views) {
+    return $views;
+  }
+}
+
+/**
+ * Implementation of hook_image_default_styles().
+ */
+function sl7_advantage_image_default_styles() {
+  $styles = array();
+
+  $styles['sl7_advantage_block'] = array(
+  	'label' => t('Advantage - block'),
+    'effects' => array(
+      array(
+        'name' => 'image_scale_and_crop',
+        'data' => array('width' => 500, 'height' => 500),
+        'weight' => '0',
+      ),
+    ),
+  );
+
+  return $styles;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function sl7_advantage_block_info() {
+  $services = sl7_advantage_service_load_multiple();
+  $blocks = array();
+
+  foreach ($services as $sid => $service) {
+    $blocks[$sid] = array(
+    	'info' => t("Advantage: @label", array('@label' => $service->label)),
+      'status' => 1,
+      'region' => 'front',
+      'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+    );
+  }
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function sl7_advantage_block_view($delta = '') {
+  static $drupal_static_fast;
+  if (!isset($drupal_static_fast)) {
+    $drupal_static_fast[__FUNCTION__] = &drupal_static(__FUNCTION__);
+  }
+  $services = &$drupal_static_fast[__FUNCTION__];
+
+  if (!isset($services)) {
+    $services = sl7_advantage_service_load_multiple();
+  }
+
+  drupal_alter(__FUNCTION__, $services);
+
+  $block = array();
+
+  if (array_key_exists($delta, $services)) {
+    $block['subject'] = $services[$delta]->label;
+    $block['content'] = array(
+      '#title' => $services[$delta]->label,
+      '#markup' => theme('sl7_advantage_service', array('element' => $services[$delta])),
+      '#contextual_links' => array(
+        'menu' => array(SL7_ADVANTAGE_ADMIN_PATH, array($delta)),
+      ),
+      '#attached' => array(
+        'css' => array(drupal_get_path('module', 'sl7_advantage') . '/css/sl7_advantage.css'),
+        'js' => array(drupal_get_path('module', 'sl7_advantage') . '/js/sl7_advantage.js'),
+      ),
+    );
+  }
+
+  return $block;
+}

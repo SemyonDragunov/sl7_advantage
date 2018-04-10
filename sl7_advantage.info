@@ -1,0 +1,27 @@
+name = Advantage
+description = Creating blocks with different content.
+package = SL7
+version = 7.x-1.0
+core = 7.x
+
+configure = admin/control-panel/apps/advantage
+
+files[] = includes/sl7_advantage_block.controller.inc
+files[] = includes/sl7_advantage_block.ui.inc
+files[] = includes/sl7_advantage_service.controller.inc
+files[] = includes/sl7_advantage_service.ui.inc
+files[] = views/handler/sl7_advantage_handler_sl7_advantage_service_operations.inc
+files[] = views/handler/sl7_advantage_handler_sl7_advantage_block_operations.inc
+
+dependencies[] = sl7_control_panel
+dependencies[] = entity
+dependencies[] = entity:entity_token
+dependencies[] = entitycache
+dependencies[] = views
+dependencies[] = ctools
+dependencies[] = colorbox
+dependencies[] = contextual
+dependencies[] = image
+dependencies[] = path_breadcrumbs
+dependencies[] = draggableviews
+dependencies[] = transliteration
