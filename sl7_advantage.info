@@ -16,7 +16,6 @@ files[] = views/handler/sl7_advantage_handler_sl7_advantage_block_operations.inc
 dependencies[] = sl7_control_panel
 dependencies[] = entity
 dependencies[] = entity:entity_token
-dependencies[] = entitycache
 dependencies[] = views
 dependencies[] = ctools
 dependencies[] = colorbox
