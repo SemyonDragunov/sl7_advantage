@@ -7,7 +7,7 @@ This module creates blocks with text and/or image in a row. Such blocks are ofte
 Required modules from SL7:
 * [sl7_control_panel](https://github.com/SemyonDragunov/sl7_control_panel)
 
-For Drupal 7. PHP =< 5.4
+For Drupal 7. PHP >= 5.4 & 7.
 
 To continue developing css, see bower.json
 
@@ -25,7 +25,7 @@ Apache License 2.0
 Требуемые модули от SL7:
 * [sl7_control_panel](https://github.com/SemyonDragunov/sl7_control_panel)
 
-Для Drupal 7. PHP =< 5.4
+Для Drupal 7. PHP >= 5.4 & 7.
 
 Для продолжения разработки css смотрите bower.json
 
